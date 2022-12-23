@@ -22,6 +22,7 @@ let listArray = [];
 // Drag Functionality
 let draggedItem;
 let currentColumn;
+let dragging = false;
 
 // Get Arrays from localStorage if available, set default values if not
 function getSavedColumns() {
@@ -60,7 +61,9 @@ function createItemEl(columnEl, column, item, index) {
   listEl.classList.add('drag-item');
   listEl.draggable = true;
   listEl.setAttribute('ondragstart', 'drag(event)')
-
+  listEl.contentEditable = true;
+  listEl.id = index;
+  listEl.setAttribute('onfocusout',`updateItem(${column},${index})`);
   listEl.textContent = item;
   columnEl.appendChild(listEl);
 
@@ -77,27 +80,44 @@ function updateDOM() {
   backlogList.textContent = '';
 
   backlogListArray.forEach((backlog,index)=>{
-    createItemEl(backlogList,0,backlog,index);
+    if(backlog)
+    {
+      createItemEl(backlogList,0,backlog,index);
+    }
+    
   })
+  
   // Progress Column
   progressList.textContent = '';
 
   progressListArray.forEach((progress,index)=>{
-    createItemEl(progressList,1,progress,index);
+    if(progress)
+    {
+      createItemEl(progressList,1,progress,index);
+    }
+    
   })
 
   // Complete Column
   completeList.textContent = '';
 
   completeListArray.forEach((complete,index)=>{
-    createItemEl(completeList,2,complete,index);
+    if(complete)
+    {
+      createItemEl(completeList,2,complete,index);
+    }
+    
   })
 
   // On Hold Column
   onHoldList.textContent = '';
 
   onHoldListArray.forEach((onHold,index)=>{
-    createItemEl(onHoldList,3,onHold,index);
+    if(onHold)
+    {
+      createItemEl(onHoldList,3,onHold,index);
+    }
+    
   })
 
   // Run getSavedColumns only once, Update Local Storage
@@ -105,8 +125,61 @@ function updateDOM() {
   updateSavedColumns()
 }
 
-// Rebuilding after drag and drop
+// updating the item
+function updateItem(col,id)
+{
 
+  const selectedArr = listArray[col];
+  const item = columnLists[col].children[id].textContent;
+  if(!dragging)
+  {
+        if(!item)
+      {
+        delete selectedArr[id]
+      }
+      else
+      {
+        selectedArr[id] = item
+      }
+      updateDOM()
+  }
+  
+}
+
+// adding new item
+function addNewItem(column)
+{
+  // to remove whitespaces
+  const itemText = addItemContainers[column].textContent.trim();
+  
+  if(itemText)
+  {
+    listArray[column].push(itemText);
+    addItemContainers[column].textContent =''
+    updateDOM();
+  } 
+}
+
+// show add new item box
+function showAdd(column)
+{
+  addBtns[column].style.visibility = 'hidden';
+  addItemContainers[column].style.display = 'flex';
+  saveItemBtns[column].style.display = 'flex';
+  addItemContainers[column].setAttribute('contenteditable','true');
+  addItemContainers[column].style.color = 'black';
+}
+
+//hiding new item box on save button
+function hideAdd(column)
+{
+  addBtns[column].style.visibility = 'visible';
+  addItemContainers[column].style.display = 'none';
+  saveItemBtns[column].style.display = 'none';
+  addNewItem(column);
+}
+
+// Rebuilding after drag and drop
 function rebuildArrays()
 {
   // backlogList
@@ -144,7 +217,7 @@ function rebuildArrays()
 function drag(e)
 {
   draggedItem = e.target;
-  console.log("draggedItem: ", draggedItem);
+  dragging = true;
 }
 
 function allowDrop(e)
@@ -166,7 +239,7 @@ function drop(e)
 
   const parent = columnLists[currentColumn];
   parent.appendChild(draggedItem);
-
+  dragging = false;
   rebuildArrays();
 }
 
